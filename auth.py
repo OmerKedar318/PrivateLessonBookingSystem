@@ -1,4 +1,3 @@
-from sqlite3 import *
 import hashlib
 import os
 

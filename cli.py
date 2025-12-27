@@ -1,6 +1,28 @@
 from booking_manager import *
 
 
+def get_int(prompt, min_val, max_val):
+    while True:
+        try:
+            value = int(input(prompt))
+            if min_val <= value <= max_val:
+                return value
+            print(f"Enter a number between {min_val} and {max_val}")
+        except ValueError:
+            print("Invalid number")
+
+
+def choose_booking_index(max_index):
+    while True:
+        try:
+            idx = int(input("Choose: "))
+            if 0 <= idx < max_index:
+                return idx
+            print("Invalid choice")
+        except ValueError:
+            print("Enter a number")
+
+
 def main_menu():
     print("\n=== Private Lessons Booking System ===")
     print("1. Register")
@@ -60,22 +82,23 @@ def login(mgr):
     email = input("Email: ")
     password = input("Password: ")
 
-    if choice == "1":
-        user = mgr.login_teacher(email, password)
-        role = "teacher"
-    else:
-        user = mgr.login_student(email, password)
-        role = "student"
+    try:
+        if choice == "1":
+            user = mgr.login_teacher(email, password)
+            role = "teacher"
+        else:
+            user = mgr.login_student(email, password)
+            role = "student"
+        print(f"Logged in as {user.name}")
+        return user, role
 
-    if user is None:
-        print("User not found")
-        return None, None
-    if user is False:
-        print("Wrong password")
-        return None, None
+    except UserNotFoundError as e:
+        print(e)
 
-    print(f"Logged in as {user.name}")
-    return user, role
+    except AuthenticationError as e:
+        print(e)
+
+    return None
 
 
 def teacher_session(mgr, teacher_obj):
@@ -98,11 +121,16 @@ def teacher_session(mgr, teacher_obj):
 
             for i, b in enumerate(bookings):
                 print(f"{i}. Student: {b['student_email']} | Day {b['day']} Hour {b['hour']}")
-            idx = int(input("Choose booking number: "))
+            idx = choose_booking_index(len(bookings))
             b = bookings[idx]
             student_obj = mgr.get_student_by_email(b["student_email"])
-            mgr.cancel(teacher_obj, student_obj, b["day"], b["hour"])
-            print("Booking canceled")
+            try:
+                mgr.cancel(teacher_obj, student_obj, b["day"], b["hour"])
+                print("Booking canceled")
+            except AuthenticationError as e:
+                print(e)
+            except BookingError as e:
+                print(e)
 
         elif choice == "4":
             break
@@ -117,10 +145,10 @@ def student_session(mgr, student_obj):
 
         elif choice == "2":
             subject = input("Subject: ")
-            day = int(input("Day (0-5): "))
-            hour = int(input("Hour (0-12): "))
+            day = get_int("Day (0-5): ", 0, 5)
+            hour = get_int("Hour (0-12): ", 0, 12)
 
-            teachers = student_obj.options(subject, day, hour)
+            teachers = mgr.get_available_teachers(subject, day, hour, student_obj)
             for t in teachers:
                 print(t)
 
@@ -130,11 +158,11 @@ def student_session(mgr, student_obj):
             hour = int(input("Hour (0-12): "))
 
             teacher_obj = mgr.get_teacher_by_email(teacher_email)
-            if teacher_obj:
-                if mgr.book(teacher_obj, student_obj, day, hour):
-                    print("Lesson booked")
-                else:
-                    print("Slot unavailable")
+            try:
+                mgr.book(teacher_obj, student_obj, day, hour)
+                print("Booking Successful")
+            except Exception as e:
+                print(e)
 
         elif choice == "4":
             bookings = mgr.get_bookings_for_student(student_obj.email)
@@ -144,23 +172,28 @@ def student_session(mgr, student_obj):
         if choice == "5":
             bookings = mgr.get_bookings_for_student(student_obj.email)
             if not bookings:
-                print("No bookings to cancel.")
+                print("No bookings to cancel")
                 continue
 
             for i, b in enumerate(bookings):
                 print(f"{i}. Teacher: {b['teacher_email']} | Day {b['day']} Hour {b['hour']}")
-            idx = int(input("Choose booking number: "))
+            idx = choose_booking_index(len(bookings))
             b = bookings[idx]
             teacher_obj = mgr.get_teacher_by_email(b["teacher_email"])
-            mgr.cancel(teacher_obj, student_obj, b["day"], b["hour"])
-            print("Booking canceled")
+            try:
+                mgr.cancel(teacher_obj, student_obj, b["day"], b["hour"])
+                print("Booking canceled")
+            except AuthenticationError as e:
+                print(e)
+            except BookingError as e:
+                print(e)
 
         elif choice == "6":
             break
 
 
 def run():
-    mgr = BookingManager(conn)
+    mgr = BookingManager()
 
     while True:
         choice = main_menu()
