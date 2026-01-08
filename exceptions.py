@@ -1,27 +1,31 @@
-class BookingError(Exception):
+class SessionError(Exception):
     """Base class for booking related errors"""
     pass
 
 
-class SlotUnavailableError(BookingError):
+class SlotUnavailableError(SessionError):
     pass
 
 
-class UserNotFoundError(BookingError):
+class UserNotFoundError(SessionError):
     pass
 
 
-class AuthenticationError(BookingError):
+class AuthenticationError(SessionError):
     pass
 
 
-class AuthorizationError(BookingError):
+class AuthorizationError(SessionError):
     pass
 
 
-class InvalidTimeError(BookingError):
+class InvalidTimeError(SessionError):
     pass
 
 
-class RegistrationError(BookingError):
+class RegistrationError(SessionError):
+    pass
+
+
+class UserAlreadyExistsError(SessionError):
     pass
