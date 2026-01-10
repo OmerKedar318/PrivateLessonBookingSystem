@@ -56,9 +56,9 @@ class SessionManager:
             raise SessionError("Session already exists at this time")
 
         self.c.execute("""
-            INSERT INTO sessions (teacher_email, day, hour, capacity)
-            VALUES (?, ?, ?, ?)
-        """, (teacher_email, day, hour, capacity))
+                INSERT INTO sessions (teacher_email, subject, day, hour, capacity)
+                VALUES (?, ?, ?, ?, ?)
+            """, (teacher_email, self.get_teacher_by_email(teacher_email).subject, day, hour, capacity))
 
         self.conn.commit()
 
@@ -67,88 +67,69 @@ class SessionManager:
         return session_id
 
     def delete_session(self, session_id, teacher_email):
-        try:
-            self.conn.execute("BEGIN")
+        row = self.c.execute("""
+            SELECT id
+            FROM sessions
+            WHERE id = ? AND teacher_email = ?
+        """, (session_id, teacher_email)).fetchone()
 
-            # Ownership check
-            owner = self.c.execute("""
-                SELECT teacher_email FROM sessions
-                WHERE id = ?
-            """, (session_id,)).fetchone()
+        if not row:
+            raise SessionError("Session not found or not owned by teacher")
 
-            if not owner:
-                raise SessionError("Session does not exist")
-
-            if owner[0] != teacher_email:
-                raise SessionError("Permission denied")
-
-            # Remove enrolled students
+        with self.conn:
             self.c.execute("""
                 DELETE FROM session_students
                 WHERE session_id = ?
             """, (session_id,))
 
-            # Remove session
             self.c.execute("""
                 DELETE FROM sessions
                 WHERE id = ?
             """, (session_id,))
 
-            self.conn.commit()
-
-        except Exception as e:
-            self.conn.rollback()
-            raise SessionError(f"Delete session failed: {e}")
-
     def get_sessions_for_teacher(self, teacher_email):
         rows = self.c.execute("""
-            SELECT
-                s.id,
-                s.day,
-                s.hour,
-                s.capacity,
-                COUNT(ss.student_email) AS enrolled
+            SELECT s.id, s.subject, s.capacity,
+                   COUNT(ss.student_email) as enrolled
             FROM sessions s
             LEFT JOIN session_students ss ON s.id = ss.session_id
             WHERE s.teacher_email = ?
             GROUP BY s.id
-            ORDER BY s.day, s.hour
+            ORDER BY s.id
         """, (teacher_email,)).fetchall()
 
         return [
-            Session(
-                id=row[0],
-                teacher_email=teacher_email,
-                day=row[1],
-                hour=row[2],
-                capacity=row[3],
-                enrolled=row[4]
-            )
-            for row in rows
+            {
+                "id": r[0],
+                "subject": r[1],
+                "capacity": r[2],
+                "enrolled": r[3],
+            }
+            for r in rows
         ]
 
     def get_sessions_for_student(self, student_email):
         rows = self.c.execute("""
-            SELECT
-                s.id,
-                s.teacher_email,
-                s.day,
-                s.hour,
-                s.capacity,
-                COUNT(ss2.student_email) AS enrolled
+            SELECT s.id, s.teacher_email, s.subject, s.capacity,
+                   COUNT(ss2.student_email) as enrolled
             FROM sessions s
-            JOIN session_students ss
-                ON s.id = ss.session_id
-            JOIN teachers t
-                ON s.teacher_email = t.email
-            LEFT JOIN session_students ss2
-                ON s.id = ss2.session_id
+            JOIN session_students ss ON s.id = ss.session_id
+            LEFT JOIN session_students ss2 ON s.id = ss2.session_id
             WHERE ss.student_email = ?
             GROUP BY s.id
-            ORDER BY s.day, s.hour
+            ORDER BY s.id
         """, (student_email,)).fetchall()
 
-        return rows
+        return [
+            {
+                "id": r[0],
+                "teacher_email": r[1],
+                "subject": r[2],
+                "capacity": r[3],
+                "enrolled": r[4],
+            }
+            for r in rows
+        ]
 
     def get_students_for_session(self, session_id, teacher_email):
         # Verify session belongs to teacher
@@ -175,34 +156,43 @@ class SessionManager:
             for row in rows
         ]
 
-    def get_available_sessions(self, subject):
-        rows = self.c.execute("""
-            SELECT
-                s.id,
-                s.teacher_email,
-                s.day,
-                s.hour,
-                s.capacity,
-                COUNT(ss.student_email) AS enrolled
-            FROM sessions s
-            JOIN teachers t ON s.teacher_email = t.email
-            LEFT JOIN session_students ss ON s.id = ss.session_id
-            WHERE t.subject = ?
-            GROUP BY s.id
-            HAVING enrolled < s.capacity
-            ORDER BY s.day, s.hour
-        """, (subject,)).fetchall()
+    def get_available_sessions(self, subject=None):
+        if subject:
+            rows = self.c.execute("""
+                SELECT s.id, s.day, s.hour, s.capacity, t.subject, t.email
+                FROM sessions s
+                JOIN teachers t ON s.teacher_email = t.email
+                WHERE t.subject = ?
+                  AND s.id NOT IN (
+                      SELECT session_id
+                      FROM session_students
+                      GROUP BY session_id
+                      HAVING COUNT(*) >= s.capacity
+                  )
+            """, (subject,)).fetchall()
+        else:
+            rows = self.c.execute("""
+                SELECT s.id, s.day, s.hour, s.capacity, t.subject, t.email
+                FROM sessions s
+                JOIN teachers t ON s.teacher_email = t.email
+                WHERE s.id NOT IN (
+                    SELECT session_id
+                    FROM session_students
+                    GROUP BY session_id
+                    HAVING COUNT(*) >= s.capacity
+                )
+            """).fetchall()
 
         return [
-            Session(
-                id=row[0],
-                teacher_email=row[1],
-                day=row[2],
-                hour=row[3],
-                capacity=row[4],
-                enrolled=row[5]
-            )
-            for row in rows
+            {
+                "id": r[0],
+                "day": r[1],
+                "hour": r[2],
+                "capacity": r[3],
+                "subject": r[4],
+                "teacher_email": r[5]
+            }
+            for r in rows
         ]
 
     def join_session(self, session_id, student_email):

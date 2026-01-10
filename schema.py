@@ -40,10 +40,4 @@ def create_tables(conn):
     )
     """)
 
-    c.execute("""
-    CREATE UNIQUE INDEX idx_teacher_time
-    ON sessions (teacher_email, day, hour
-    );
-    """)
-
     conn.commit()

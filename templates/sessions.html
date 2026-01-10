@@ -1,0 +1,32 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<h1>Available Sessions</h1>
+
+<form method="get">
+    <input name="subject" placeholder="Filter by subject"
+           value="{{ subject or '' }}">
+    <button>Filter</button>
+</form>
+
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Teacher</th>
+        <th>Subject</th>
+        <th>Spots</th>
+        <th>Action</th>
+    </tr>
+
+    {% for s in sessions %}
+    <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.teacher_email }}</td>
+        <td>{{ s.subject }}</td>
+        <td>{{ s.enrolled }}/{{ s.capacity }}</td>
+        <td>
+            <a href="/join_session/{{ s.id }}">Join</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+<a href="/student">Back</a>

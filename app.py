@@ -35,6 +35,7 @@ def login():
                 user = manager.login_teacher(email, password)
 
             session["email"] = user.email
+            session["role"] = user.role
             return redirect("/dashboard")
 
         except Exception as e:
@@ -54,25 +55,39 @@ def dashboard():
     role = session.get("role")
 
     if role == "teacher":
-        return redirect("/teacher")
+        return redirect(url_for("teacher_dashboard"))
     elif role == "student":
-        return redirect("/student")
+        return redirect(url_for("student_dashboard"))
     else:
-        return redirect("/login")
+        return redirect(url_for("login"))
 
 
 @app.route("/teacher")
 def teacher_dashboard():
     if session.get("role") != "teacher":
         return redirect("/login")
-    return "Teacher dashboard"
+
+    manager = get_manager()
+    teacher = manager.get_teacher_by_email(session["email"])
+
+    return render_template(
+        "teacher_dashboard.html",
+        teacher=teacher
+    )
 
 
 @app.route("/student")
 def student_dashboard():
     if session.get("role") != "student":
         return redirect("/login")
-    return "Student dashboard"
+
+    manager = get_manager()
+    student = manager.get_student_by_email(session["email"])
+
+    return render_template(
+        "student_dashboard.html",
+        student=student
+    )
 
 
 @app.route("/signup")
@@ -93,6 +108,7 @@ def signup_teacher():
                 request.form["password"]
             )
             session["email"] = teacher.email
+            session["role"] = "teacher"
             return redirect("/dashboard")
         except Exception as e:
             return render_template("signup_teacher.html", error=str(e))
@@ -112,11 +128,119 @@ def signup_student():
                 request.form["password"]
             )
             session["email"] = student.email
+            session["role"] = "student"
             return redirect("/dashboard")
         except Exception as e:
             return render_template("signup_student.html", error=str(e))
 
     return render_template("signup_student.html")
+
+
+@app.route("/sessions")
+def available_sessions():
+    if session.get("role") != "student":
+        return redirect("/login")
+
+    manager = get_manager()
+    subject = request.args.get("subject")
+
+    sessions = manager.get_available_sessions(subject)
+
+    return render_template(
+        "sessions.html",
+        sessions=sessions,
+        subject=subject
+    )
+
+
+@app.route("/join_session/<int:session_id>")
+def join_session(session_id):
+    if session.get("role") != "student":
+        return redirect("/login")
+
+    manager = get_manager()
+    try:
+        manager.join_session(session_id, session["email"])
+    except Exception as e:
+        return str(e)
+
+    return redirect("/sessions")
+
+
+@app.route("/my_sessions")
+def my_sessions():
+    if session.get("role") != "student":
+        return redirect("/login")
+
+    manager = get_manager()
+    sessions = manager.get_sessions_for_student(session["email"])
+
+    return render_template("my_sessions.html", sessions=sessions)
+
+
+@app.route("/leave_session/<int:session_id>")
+def leave_session(session_id):
+    if session.get("role") != "student":
+        return redirect("/login")
+
+    manager = get_manager()
+    try:
+        manager.leave_session(session_id, session["email"])
+    except Exception as e:
+        return str(e)
+
+    return redirect("/my_sessions")
+
+
+@app.route("/teacher_sessions")
+def teacher_sessions():
+    if session.get("role") != "teacher":
+        return redirect("/login")
+
+    manager = get_manager()
+    sessions = manager.get_sessions_for_teacher(session["email"])
+
+    return render_template("teacher_sessions.html", sessions=sessions)
+
+
+@app.route("/delete_session/<int:session_id>")
+def delete_session(session_id):
+    if session.get("role") != "teacher":
+        return redirect("/login")
+
+    manager = get_manager()
+    try:
+        manager.delete_session(session_id, session["email"])
+    except Exception as e:
+        return str(e)
+
+    return redirect("/teacher_sessions")
+
+
+@app.route("/create_session", methods=["GET", "POST"])
+def create_session():
+    if session.get("role") != "teacher":
+        return redirect("/login")
+
+    manager = get_manager()
+    teacher = manager.get_teacher_by_email(session["email"])
+
+    if request.method == "POST":
+        try:
+            manager.create_session(
+                teacher_email=teacher.email,
+                day=request.form["day"],
+                hour=request.form["hour"],
+            )
+            return redirect("/teacher")
+        except Exception as e:
+            return render_template(
+                "create_session.html",
+                teacher=teacher,
+                error=str(e)
+            )
+
+    return render_template("create_session.html", teacher=teacher)
 
 
 if __name__ == "__main__":

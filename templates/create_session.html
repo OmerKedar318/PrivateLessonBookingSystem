@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Session</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<h1>Create New Session</h1>
+<p>Teacher: {{ teacher.name }}</p>
+
+{% if error %}
+<p style="color:red">{{ error }}</p>
+{% endif %}
+
+<form method="post">
+    <input type="number" name="day" placeholder="Day" required><br><br>
+
+    <input type="number" name="hour" placeholder="Hour" required><br><br>
+
+    <button>Create</button>
+</form>
+
+<br>
+<a href="/teacher">Back</a>
+
+</body>
+</html>

@@ -8,6 +8,7 @@ c = conn.cursor()
 
 class Teacher:
     def __init__(self, name, email, subject, password, load_existing=False):
+        self.role = "teacher"
         self.name = name
         self.email = email
         self.subject = subject
@@ -64,6 +65,7 @@ class Teacher:
 
 class Student:
     def __init__(self, name, email, password, load_existing=False):
+        self.role = "student"
         self.name = name
         self.email = email
         self.password = password

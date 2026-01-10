@@ -1,0 +1,30 @@
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<h1>My Sessions</h1>
+
+{% if sessions %}
+<table border="1">
+    <tr>
+        <th>ID</th>
+        <th>Teacher</th>
+        <th>Subject</th>
+        <th>Spots</th>
+        <th>Action</th>
+    </tr>
+
+    {% for s in sessions %}
+    <tr>
+        <td>{{ s.id }}</td>
+        <td>{{ s.teacher_email }}</td>
+        <td>{{ s.subject }}</td>
+        <td>{{ s.enrolled }}/{{ s.capacity }}</td>
+        <td>
+            <a href="/leave_session/{{ s.id }}">Leave</a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% else %}
+<p>You are not enrolled in any sessions.</p>
+{% endif %}
+
+<a href="/student">Back</a>
