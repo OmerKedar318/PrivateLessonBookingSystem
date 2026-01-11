@@ -1,32 +1,13 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Teacher Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<h1>Welcome, {{ teacher.name }}</h1>
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<h2>Welcome, {{ teacher.name }}</h2>
 <p>Subject: {{ teacher.subject }}</p>
 
-<nav>
-    <a href="/teacher">Home</a>
-    <a href="/create_session">Create Session</a>
-    <a href="/teacher_sessions">My Sessions</a>
-    <a href="/logout">Logout</a>
-</nav>
-
-<section class="content">
-        <h2>Your Dashboard</h2>
-        <p>
-            From here you can:
-        </p>
-        <ul>
-            <li>Create new sessions</li>
-            <li>Delete sessions</li>
-            <li>View sessions you already created</li>
-        </ul>
-    </section>
-
-</body>
-</html>
+<ul>
+    <li><a href="/create_session">Create Session</a></li>
+    <li><a href="/teacher_sessions">My Sessions</a></li>
+</ul>
+{% endblock %}

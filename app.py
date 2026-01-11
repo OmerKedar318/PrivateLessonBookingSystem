@@ -1,5 +1,5 @@
 from flask import Flask
-from flask import request, session, redirect, url_for, render_template
+from flask import request, session, redirect, url_for, render_template, flash
 import sqlite3
 from schema import create_tables
 from session_manager import SessionManager
@@ -31,15 +31,17 @@ def login():
         try:
             try:
                 user = manager.login_student(email, password)
+                session["role"] = "student"
             except Exception:
                 user = manager.login_teacher(email, password)
+                session["role"] = "teacher"
 
             session["email"] = user.email
-            session["role"] = user.role
+            flash("Logged in successfully", "success")
             return redirect("/dashboard")
 
         except Exception as e:
-            return render_template("login.html", error=str(e))
+            flash(str(e), "error")
 
     return render_template("login.html")
 
@@ -109,9 +111,10 @@ def signup_teacher():
             )
             session["email"] = teacher.email
             session["role"] = "teacher"
+            flash("Account created successfully!", "success")
             return redirect("/dashboard")
         except Exception as e:
-            return render_template("signup_teacher.html", error=str(e))
+            flash(str(e), "error")
 
     return render_template("signup_teacher.html")
 
@@ -129,9 +132,10 @@ def signup_student():
             )
             session["email"] = student.email
             session["role"] = "student"
+            flash("Account created successfully!", "success")
             return redirect("/dashboard")
         except Exception as e:
-            return render_template("signup_student.html", error=str(e))
+            flash(str(e), "error")
 
     return render_template("signup_student.html")
 
@@ -153,16 +157,18 @@ def available_sessions():
     )
 
 
-@app.route("/join_session/<int:session_id>")
+@app.route("/join/<int:session_id>", methods=["POST"])
 def join_session(session_id):
     if session.get("role") != "student":
         return redirect("/login")
 
     manager = get_manager()
+
     try:
         manager.join_session(session_id, session["email"])
+        flash("Joined session successfully!", "success")
     except Exception as e:
-        return str(e)
+        flash(str(e), "error")
 
     return redirect("/sessions")
 

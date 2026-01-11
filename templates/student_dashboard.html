@@ -1,37 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Student Dashboard</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
 
-<div class="container">
-    <header>
-        <h1>Welcome, {{ student.name }}</h1>
-        <p>Email: {{ student.email }}</p>
-    </header>
+{% block title %}Student Dashboard{% endblock %}
 
-    <nav class="navbar">
-        <a href="{{ url_for('student_dashboard') }}">Home</a>
-        <a href="{{ url_for('available_sessions') }}">Available Sessions</a>
-        <a href="{{ url_for('my_sessions') }}">My Sessions</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
+{% block content %}
+<h2>Welcome, {{ student.name }}</h2>
 
-    <section class="content">
-        <h2>Your Dashboard</h2>
-        <p>
-            From here you can:
-        </p>
-        <ul>
-            <li>Browse available sessions</li>
-            <li>Join sessions</li>
-            <li>View sessions you already joined</li>
-        </ul>
-    </section>
-</div>
-
-</body>
-</html>
+<ul>
+    <li><a href="/sessions">Available Sessions</a></li>
+    <li><a href="/my_sessions">My Sessions</a></li>
+</ul>
+{% endblock %}

@@ -1,24 +1,48 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>{% block title %}YDT{% endblock %}</title>
+    <title>{% block title %}Booking System{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
-<nav>
-    {% if session.email %}
-        Logged in as {{ session.email }} |
-        <a href="/logout">Logout</a>
-    {% else %}
-        <a href="/login">Login</a> |
-        <a href="/signup">Signup</a>
-    {% endif %}
-</nav>
+<div class="container">
 
-<hr>
+    <header>
+        <h1>Private Lessons Booking</h1>
 
-{% block content %}{% endblock %}
+        {% if session.email %}
+            <nav class="navbar">
+                {% if session.role == "teacher" %}
+                    <a href="/teacher">Dashboard</a>
+                {% elif session.role == "student" %}
+                    <a href="/student">Dashboard</a>
+                {% endif %}
+                |
+                <a href="/logout">Logout</a>
+            </nav>
+        {% endif %}
+    </header>
+
+    <!-- FLASH MESSAGES -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash {{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <hr>
+
+    <!-- PAGE CONTENT -->
+    <main class="content">
+        {% block content %}{% endblock %}
+    </main>
+
+</div>
 
 </body>
 </html>
