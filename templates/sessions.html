@@ -23,7 +23,9 @@
         <td>{{ s.subject }}</td>
         <td>{{ s.enrolled }}/{{ s.capacity }}</td>
         <td>
-            <a href="/join_session/{{ s.id }}">Join</a>
+            <form method="post" action="{{ url_for('join_session', session_id=s.id) }}">
+                <button type="submit">Join</button>
+            </form>
         </td>
     </tr>
     {% endfor %}
