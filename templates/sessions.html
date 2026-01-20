@@ -1,34 +1,57 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<h1>Available Sessions</h1>
+{% extends "base.html" %}
+{% block title %}Weekly Schedule{% endblock %}
 
-<form method="get">
-    <input name="subject" placeholder="Filter by subject"
-           value="{{ subject or '' }}">
-    <button>Filter</button>
-</form>
+{% block content %}
+<div class="container">
+    <h2>Available Sessions</h2>
 
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Teacher</th>
-        <th>Subject</th>
-        <th>Spots</th>
-        <th>Action</th>
-    </tr>
+    <div class="search-form">
+        <input
+            type="text"
+            id="search"
+            placeholder="Search by subject..."
+            value="{{ query }}"
+        >
+    </div>
 
-    {% for s in sessions %}
-    <tr>
-        <td>{{ s.id }}</td>
-        <td>{{ s.teacher_email }}</td>
-        <td>{{ s.subject }}</td>
-        <td>{{ s.enrolled }}/{{ s.capacity }}</td>
-        <td>
-            <form method="post" action="{{ url_for('join_session', session_id=s.id) }}">
-                <button type="submit">Join</button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    {% if not query %}
+        <p>Search for a subject to see available sessions.</p>
+    {% elif not sessions %}
+        <p>No sessions found.</p>
+    {% endif %}
 
-<a href="/student">Back</a>
+    <table class="schedule-grid">
+        <thead>
+            <tr>
+                <th>Hour</th>
+                {% for day in days %}
+                    <th>{{ day_names[day] }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+
+        <tbody id="sessions-body">
+            {% include "_sessions_table.html" %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    const search = document.getElementById("search");
+    const tbody = document.getElementById("sessions-body");
+
+    search.addEventListener("input", () => {
+        fetch(`/sessions?q=${encodeURIComponent(search.value)}`, {
+            headers: { "X-Requested-With": "XMLHttpRequest" }
+        })
+        .then(res => res.text())
+        .then(html => {
+            tbody.innerHTML = html;
+        });
+    });
+});
+</script>
+{% endblock %}

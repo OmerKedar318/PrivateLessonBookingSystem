@@ -1,0 +1,39 @@
+{% for hour in hours %}
+<tr>
+    <td><strong>{{ hour }}</strong></td>
+
+    {% for day in days %}
+        <td>
+            {% if (day, hour) in schedule %}
+                {% set s = schedule[(day, hour)] %}
+                <div class="card
+                    {% if s.joined %} joined
+                    {% elif s.conflict %} conflict
+                    {% endif %}">
+
+                    <strong>{{ s.subject }}</strong><br>
+                    Teacher: {{ s.teacher_name }}<br>
+                    Seats left: {{ s.remaining }}
+
+                    {% if s.joined %}
+                        <span class="badge success">✔ Joined</span>
+
+                    {% elif s.conflict %}
+                        <span class="badge warning">⛔ Time conflict</span>
+
+                    {% elif s.remaining > 0 %}
+                        <form method="post"
+                              action="{{ url_for('join_session', session_id=s.id) }}">
+                            <button class="small-btn">Join</button>
+                        </form>
+                    {% else %}
+                        <span class="badge danger">Full</span>
+                    {% endif %}
+                </div>
+            {% else %}
+                —
+            {% endif %}
+        </td>
+    {% endfor %}
+</tr>
+{% endfor %}

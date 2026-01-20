@@ -141,19 +141,57 @@ def signup_student():
 
 
 @app.route("/sessions")
-def available_sessions():
+def sessions():
     if session.get("role") != "student":
         return redirect("/login")
 
     manager = get_manager()
-    subject = request.args.get("subject")
 
-    sessions = manager.get_available_sessions(subject)
+    # Get search query (can be empty)
+    query = request.args.get("q", "").strip()
+
+    # Fetch sessions (all if no query)
+    sessions = manager.get_available_sessions(
+        student_email=session["email"],
+        subject=query if query else None
+    )
+
+    # Fixed ranges
+    days = list(range(6))       # 0–5 (Sunday–Friday)
+    hours = list(range(13))     # 0–12
+
+    # Build lookup table: (day, hour) -> session
+    schedule = {}
+    for s in sessions:
+        schedule[(s["day"], s["hour"])] = s
+
+    day_names = {
+        0: "Sunday",
+        1: "Monday",
+        2: "Tuesday",
+        3: "Wednesday",
+        4: "Thursday",
+        5: "Friday",
+    }
+
+    if request.headers.get("X-Requested-With") == "XMLHttpRequest":
+        return render_template(
+            "_sessions_table.html",
+            days=days,
+            hours=hours,
+            schedule=schedule,
+            day_names=day_names,
+            sessions=sessions
+        )
 
     return render_template(
         "sessions.html",
+        days=days,
+        hours=hours,
+        schedule=schedule,
+        day_names=day_names,
         sessions=sessions,
-        subject=subject
+        query=query
     )
 
 

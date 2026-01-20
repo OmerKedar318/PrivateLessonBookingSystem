@@ -156,41 +156,61 @@ class SessionManager:
             for row in rows
         ]
 
-    def get_available_sessions(self, subject=None):
+    def get_available_sessions(self, student_email, subject=None):
+        c = self.conn.cursor()
+
+        query = """
+            SELECT
+                s.id,
+                s.day,
+                s.hour,
+                s.capacity,
+                s.subject,
+                t.name,
+                ss2.session_id IS NOT NULL AS joined,
+                EXISTS (
+                    SELECT 1
+                    FROM session_students ss
+                    JOIN sessions s2 ON ss.session_id = s2.id
+                    WHERE ss.student_email = ?
+                      AND s2.day = s.day
+                      AND s2.hour = s.hour
+                      AND s2.id != s.id
+                ) AS conflict,
+                (
+                    s.capacity - (
+                        SELECT COUNT(*)
+                        FROM session_students
+                        WHERE session_id = s.id
+                    )
+                ) AS remaining
+            FROM sessions s
+            JOIN teachers t ON s.teacher_email = t.email
+            LEFT JOIN session_students ss2
+                ON ss2.session_id = s.id
+               AND ss2.student_email = ?
+        """
+
+        params = [student_email, student_email]
+
         if subject:
-            rows = self.c.execute("""
-                SELECT s.id, s.day, s.hour, s.capacity, t.subject, t.email
-                FROM sessions s
-                JOIN teachers t ON s.teacher_email = t.email
-                WHERE t.subject = ?
-                  AND s.id NOT IN (
-                      SELECT session_id
-                      FROM session_students
-                      GROUP BY session_id
-                      HAVING COUNT(*) >= s.capacity
-                  )
-            """, (subject,)).fetchall()
-        else:
-            rows = self.c.execute("""
-                SELECT s.id, s.day, s.hour, s.capacity, t.subject, t.email
-                FROM sessions s
-                JOIN teachers t ON s.teacher_email = t.email
-                WHERE s.id NOT IN (
-                    SELECT session_id
-                    FROM session_students
-                    GROUP BY session_id
-                    HAVING COUNT(*) >= s.capacity
-                )
-            """).fetchall()
+            query += " WHERE LOWER(s.subject) LIKE LOWER(?)"
+            params.append(f"%{subject}%")
+
+        c.execute(query, params)
+        rows = c.fetchall()
 
         return [
             {
                 "id": r[0],
-                "day": r[1],
+                "day": int(r[1]),
                 "hour": r[2],
                 "capacity": r[3],
                 "subject": r[4],
-                "teacher_email": r[5]
+                "teacher_name": r[5],
+                "joined": bool(r[6]),
+                "conflict": bool(r[7]),
+                "remaining": r[8],
             }
             for r in rows
         ]
@@ -333,3 +353,40 @@ class SessionManager:
             raise AuthenticationError("Incorrect password")
 
         return Student(name, email, stored_hash, load_existing=True)
+
+    def is_student_enrolled(self, session_id, student_email):
+        row = self.c.execute("""
+            SELECT 1
+            FROM session_students
+            WHERE session_id = ? AND student_email = ?
+        """, (session_id, student_email)).fetchone()
+
+        return row is not None
+
+    def search_sessions(self, query, student_email):
+        rows = self.c.execute("""
+            SELECT
+                s.id,
+                s.day,
+                s.hour,
+                s.capacity,
+                s.subject,
+                t.name
+            FROM sessions s
+            JOIN teachers t ON s.teacher_email = t.email
+            WHERE LOWER(s.subject) LIKE ?
+        """, (f"%{query.lower()}%",)).fetchall()
+
+        sessions = []
+        for r in rows:
+            sessions.append({
+                "id": r[0],
+                "day": r[1],
+                "hour": r[2],
+                "capacity": r[3],
+                "subject": r[4],
+                "teacher_name": r[5],
+                "joined": self.is_student_enrolled(r[0], student_email)
+            })
+
+        return sessions

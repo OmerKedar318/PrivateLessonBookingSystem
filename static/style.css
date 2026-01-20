@@ -126,3 +126,126 @@ a:hover {
     background-color: #f8d7da;
     color: #721c24;
 }
+
+/* SCHEDULE TABLE */
+table.schedule {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+table.schedule th,
+table.schedule td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #eee;
+}
+
+table.schedule th {
+    background: #2c3e50;
+    color: white;
+}
+
+table.schedule tr:hover {
+    background: #f2f6fa;
+}
+
+.small-btn {
+    padding: 6px 12px;
+    font-size: 14px;
+}
+
+.joined {
+    color: green;
+    font-weight: bold;
+}
+
+.schedule-grid {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.schedule-grid th,
+.schedule-grid td {
+    border: 1px solid #ddd;
+    padding: 10px;
+    text-align: center;
+    vertical-align: top;
+}
+
+.schedule-grid th {
+    background: #2c3e50;
+    color: white;
+}
+
+.small-btn {
+    margin-top: 8px;
+    padding: 6px;
+    font-size: 14px;
+}
+
+.search-form {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-form input[type="text"] {
+    width: 100%;
+    max-width: 400px;
+}
+
+.card.joined {
+    border-left: 6px solid #2ecc71;
+    background: #ecfdf3;
+}
+
+.joined-label {
+    color: #2ecc71;
+    font-weight: bold;
+}
+
+.full {
+    color: red;
+    font-weight: bold;
+}
+
+.card.conflict {
+    opacity: 0.5;
+    background: #f8d7da;
+    border-left: 4px solid #dc3545;
+    pointer-events: none;
+}
+
+.card.joined {
+    background: #d4edda;
+    border-left: 4px solid #28a745;
+}
+
+.badge {
+    display: inline-block;
+    padding: 4px 8px;
+    margin-top: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.badge.success {
+    background: #28a745;
+    color: white;
+}
+
+.badge.warning {
+    background: #ffc107;
+    color: black;
+}
+
+.badge.danger {
+    background: #dc3545;
+    color: white;
+}

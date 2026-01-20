@@ -23,7 +23,7 @@ def create_tables(conn):
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         teacher_email TEXT NOT NULL,
         subject TEXT NOT NULL,
-        day TEXT NOT NULL,
+        day INTEGER NOT NULL,
         hour INTEGER NOT NULL,
         capacity INTEGER NOT NULL,
         FOREIGN KEY (teacher_email) REFERENCES teachers(email)
