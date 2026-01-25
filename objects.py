@@ -102,7 +102,7 @@ class Student:
         manager.leave_session(session_id, self.email)
 
     def my_sessions(self, manager):
-        return manager.get_student_sessions(self.email)
+        return manager.get_sessions_for_student(self.email)
 
 
 class Session:

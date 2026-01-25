@@ -1,28 +1,52 @@
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-<h1>My Sessions</h1>
+{% extends "base.html" %}
+{% block title %}My Sessions{% endblock %}
 
-{% if sessions %}
-<table border="1">
-    <tr>
-        <th>ID</th>
-        <th>Subject</th>
-        <th>Spots</th>
-        <th>Actions</th>
-    </tr>
+{% block content %}
+<div class="container">
+    <h2>My Sessions</h2>
 
-    {% for s in sessions %}
-    <tr>
-        <td>{{ s.id }}</td>
-        <td>{{ s.subject }}</td>
-        <td>{{ s.enrolled }}/{{ s.capacity }}</td>
-        <td>
-            <a href="/delete_session/{{ s.id }}">Delete</a>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
-{% else %}
-<p>You haven’t created any sessions yet.</p>
-{% endif %}
+    <table class="schedule-grid">
+        <thead>
+            <tr>
+                <th>Hour</th>
+                {% for day in days %}
+                    <th>{{ day_names[day] }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
 
-<a href="/teacher">Back</a>
+        <tbody>
+        {% for hour in hours %}
+            <tr>
+                <td><strong>{{ hour }}</strong></td>
+
+                {% for day in days %}
+                    <td>
+                        {% if (day, hour) in schedule %}
+                            {% set s = schedule[(day, hour)] %}
+                            <div class="card">
+                                <strong>{{ s.subject }}</strong><br>
+                                {{ s.enrolled }}/{{ s.capacity }} students
+
+                                <form method="get"
+                                      action="/teacher/view_students/{{ s.id }}">
+                                    <button class="small-btn">View Students</button>
+                                </form>
+
+                                <form method="post"
+                                      action="/teacher/delete_session/{{ s.id }}"
+                                      onsubmit="return confirm('Delete this session?');">
+                                    <button class="small-btn danger">Delete</button>
+                                </form>
+                            </div>
+                        {% else %}
+                            —
+                        {% endif %}
+                    </td>
+                {% endfor %}
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

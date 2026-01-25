@@ -1,28 +1,94 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Create Session</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block content %}
 
-<h1>Create New Session</h1>
+<h2>Create New Session</h2>
 <p>Teacher: {{ teacher.name }}</p>
 
 {% if error %}
 <p style="color:red">{{ error }}</p>
 {% endif %}
 
-<form method="post">
-    <input type="number" name="day" placeholder="Day" required><br><br>
+<form method="post" id="sessionForm">
+    <input type="hidden" name="day" id="dayInput">
+    <input type="hidden" name="hour" id="hourInput">
 
-    <input type="number" name="hour" placeholder="Hour" required><br><br>
+    <table class="mini-grid">
+        <thead>
+            <tr>
+                <th>Hour</th>
+                <th>Sun</th>
+                <th>Mon</th>
+                <th>Tue</th>
+                <th>Wed</th>
+                <th>Thu</th>
+                <th>Fri</th>
+            </tr>
+        </thead>
+        <tbody id="gridBody"></tbody>
+    </table>
 
-    <button>Create</button>
+    <br>
+    <button type="submit" class="big-btn">Create Session</button>
 </form>
 
-<br>
-<a href="/teacher">Back</a>
+<script>
+const taken = {{ taken|tojson }};
+const body = document.getElementById("gridBody");
+let selectedCell = null;
 
-</body>
-</html>
+const form = document.getElementById("sessionForm");
+
+if (form) {
+    form.onsubmit = function (e) {
+        const day = document.getElementById("dayInput").value;
+        const hour = document.getElementById("hourInput").value;
+
+        if (day === "" || hour === "") {
+            alert("Please select a time slot from the grid");
+            e.preventDefault();
+        }
+    };
+}
+
+function isTaken(day, hour) {
+    return taken.some(t => t[0] === day && t[1] === hour);
+}
+
+for (let hour = 0; hour <= 12; hour++) {
+    const row = document.createElement("tr");
+
+    const hourCell = document.createElement("td");
+    hourCell.textContent = hour;
+    row.appendChild(hourCell);
+
+    for (let day = 0; day < 6; day++) {
+        const cell = document.createElement("td");
+        cell.classList.add("grid-cell");
+
+        if (isTaken(day, hour)) {
+            cell.classList.add("taken");
+            cell.textContent = "X";
+            cell.title = "You already have a session here";
+        }
+        else {
+            cell.onclick = () => {
+                if (selectedCell) {
+                    selectedCell.classList.remove("selected");
+                }
+
+                cell.classList.add("selected");
+                selectedCell = cell;
+
+                document.getElementById("dayInput").value = day;
+                document.getElementById("hourInput").value = hour;
+            };
+        }
+
+        row.appendChild(cell);
+    }
+
+    body.appendChild(row);
+}
+</script>
+
+{% endblock %}

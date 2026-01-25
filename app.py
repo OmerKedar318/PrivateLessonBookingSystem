@@ -10,6 +10,7 @@ app.secret_key = "dev-secret-key"  # change later
 
 def get_manager():
     conn = sqlite3.connect("database.db", check_same_thread=False)
+    conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     create_tables(conn)
     return SessionManager(conn)
@@ -219,10 +220,32 @@ def my_sessions():
     manager = get_manager()
     sessions = manager.get_sessions_for_student(session["email"])
 
-    return render_template("my_sessions.html", sessions=sessions)
+    days = list(range(6))      # Sunday–Friday
+    hours = list(range(13))    # 0–12
+
+    schedule = {}
+    for s in sessions:
+        schedule[(s["day"], s["hour"])] = s
+
+    day_names = {
+        0: "Sunday",
+        1: "Monday",
+        2: "Tuesday",
+        3: "Wednesday",
+        4: "Thursday",
+        5: "Friday",
+    }
+
+    return render_template(
+        "my_sessions.html",
+        days=days,
+        hours=hours,
+        schedule=schedule,
+        day_names=day_names
+    )
 
 
-@app.route("/leave_session/<int:session_id>")
+@app.route("/leave_session/<int:session_id>", methods=["POST"])
 def leave_session(session_id):
     if session.get("role") != "student":
         return redirect("/login")
@@ -237,26 +260,56 @@ def leave_session(session_id):
 
 
 @app.route("/teacher_sessions")
-def teacher_sessions():
+def teacher_my_sessions():
     if session.get("role") != "teacher":
         return redirect("/login")
 
     manager = get_manager()
     sessions = manager.get_sessions_for_teacher(session["email"])
 
-    return render_template("teacher_sessions.html", sessions=sessions)
+    days = list(range(6))      # Sunday–Friday
+    hours = list(range(13))    # 0–12
+
+    schedule = {}
+    for s in sessions:
+        schedule[(s["day"], s["hour"])] = s
+
+    day_names = {
+        0: "Sunday",
+        1: "Monday",
+        2: "Tuesday",
+        3: "Wednesday",
+        4: "Thursday",
+        5: "Friday",
+    }
+
+    return render_template(
+        "teacher_sessions.html",
+        days=days,
+        hours=hours,
+        schedule=schedule,
+        day_names=day_names
+    )
 
 
-@app.route("/delete_session/<int:session_id>")
+@app.route("/teacher/view_students/<int:session_id>")
+def view_students(session_id):
+    if session.get("role") != "teacher":
+        return redirect("/login")
+
+    manager = get_manager()
+    students = manager.get_students_for_session(session_id, session["email"])
+
+    return render_template("view_students.html", students=students)
+
+
+@app.route("/teacher/delete_session/<int:session_id>", methods=["POST"])
 def delete_session(session_id):
     if session.get("role") != "teacher":
         return redirect("/login")
 
     manager = get_manager()
-    try:
-        manager.delete_session(session_id, session["email"])
-    except Exception as e:
-        return str(e)
+    manager.delete_session(session_id, session["email"])
 
     return redirect("/teacher_sessions")
 
@@ -270,21 +323,24 @@ def create_session():
     teacher = manager.get_teacher_by_email(session["email"])
 
     if request.method == "POST":
+        day = int(request.form["day"])
+        hour = int(request.form["hour"])
         try:
-            manager.create_session(
-                teacher_email=teacher.email,
-                day=request.form["day"],
-                hour=request.form["hour"],
-            )
-            return redirect("/teacher")
+            manager.create_session(session["email"], day, hour)
+            return redirect("/teacher_sessions")
         except Exception as e:
-            return render_template(
-                "create_session.html",
-                teacher=teacher,
-                error=str(e)
-            )
+            error = str(e)
+    else:
+        error = None
 
-    return render_template("create_session.html", teacher=teacher)
+    existing = manager.get_sessions_for_teacher(session["email"])
+    taken = [[s["day"], s["hour"]] for s in existing]
+
+    return render_template(
+        "create_session.html",
+        teacher=teacher,
+        taken=taken
+    )
 
 
 if __name__ == "__main__":

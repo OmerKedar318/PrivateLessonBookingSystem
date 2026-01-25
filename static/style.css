@@ -249,3 +249,41 @@ table.schedule tr:hover {
     background: #dc3545;
     color: white;
 }
+
+.card.joined {
+    background: #e6f7ff;
+    border-left: 4px solid #2196f3;
+}
+
+.mini-grid {
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+.mini-grid th,
+.mini-grid td {
+    border: 1px solid #ccc;
+    width: 60px;
+    height: 40px;
+    text-align: center;
+}
+
+.grid-cell {
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.grid-cell:hover {
+    background-color: #e0f0ff;
+}
+
+.taken {
+    background-color: #f5b5b5;
+    cursor: not-allowed;
+    font-weight: bold;
+}
+
+.selected {
+    background-color: #90ee90 !important;
+    font-weight: bold;
+}

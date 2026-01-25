@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Students in Session{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h2>Students Enrolled</h2>
+
+    {% if students %}
+        <table class="schedule-grid">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for s in students %}
+                <tr>
+                    <td>{{ s.name }}</td>
+                    <td>{{ s.email }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No students have joined this session yet.</p>
+    {% endif %}
+
+    <br>
+    <a href="/teacher_sessions" class="small-btn">Back to My Sessions</a>
+</div>
+{% endblock %}
