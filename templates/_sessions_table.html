@@ -24,6 +24,7 @@
                     {% elif s.remaining > 0 %}
                         <form method="post"
                               action="{{ url_for('join_session', session_id=s.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             <button class="small-btn">Join</button>
                         </form>
                     {% else %}

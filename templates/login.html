@@ -6,6 +6,7 @@
 <h2>Login</h2>
 
 <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input name="email" placeholder="Email" required><br>
     <input name="password" type="password" placeholder="Password" required><br>
     <button type="submit">Login</button>

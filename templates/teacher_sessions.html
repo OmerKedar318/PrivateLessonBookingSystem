@@ -30,6 +30,7 @@
 
                                 <form method="get"
                                       action="/teacher/view_students/{{ s.id }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="small-btn">View Students</button>
                                 </form>
 

@@ -9,6 +9,7 @@
 {% endif %}
 
 <form method="post" id="sessionForm">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="day" id="dayInput">
     <input type="hidden" name="hour" id="hourInput">
 

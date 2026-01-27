@@ -32,6 +32,7 @@
                                 <form method="post"
                                       action="/leave_session/{{ s.id }}"
                                       onsubmit="return confirm('Leave this session?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="small-btn danger">Leave</button>
                                 </form>
                             </div>

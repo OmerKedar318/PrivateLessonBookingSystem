@@ -1,11 +1,21 @@
+import time
+from datetime import timedelta
 from flask import Flask
 from flask import request, session, redirect, url_for, render_template, flash
+from flask_wtf.csrf import CSRFProtect
 import sqlite3
 from schema import create_tables
 from session_manager import SessionManager
 
 app = Flask(__name__)
-app.secret_key = "dev-secret-key"  # change later
+app.config.update(
+    SECRET_KEY="d2cebde103aec872ca1c81aa167f5762ab5411afb1e8c840297e14a15f871bc8",
+    SESSION_COOKIE_HTTPONLY=True,
+    SESSION_COOKIE_SECURE=False,  # local dev
+    SESSION_COOKIE_SAMESITE="Lax",
+    PERMANENT_SESSION_LIFETIME=timedelta(minutes=30)
+)
+csrf = CSRFProtect(app)
 
 
 def get_manager():
@@ -25,6 +35,9 @@ def index():
 def login():
     manager = get_manager()
 
+    if "login_attempts" not in session:
+        session["login_attempts"] = 0
+
     if request.method == "POST":
         email = request.form["email"]
         password = request.form["password"]
@@ -33,15 +46,21 @@ def login():
             try:
                 user = manager.login_student(email, password)
                 session["role"] = "student"
+                session["login_attempts"] = 0
             except Exception:
                 user = manager.login_teacher(email, password)
                 session["role"] = "teacher"
+                session["login_attempts"] = 0
 
+            session.permanent = True
             session["email"] = user.email
             flash("Logged in successfully", "success")
             return redirect("/dashboard")
 
         except Exception as e:
+            session["login_attempts"] += 1
+            if session["login_attempts"] > 5:
+                time.sleep(3)
             flash(str(e), "error")
 
     return render_template("login.html")
@@ -158,8 +177,8 @@ def sessions():
     )
 
     # Fixed ranges
-    days = list(range(6))       # 0–5 (Sunday–Friday)
-    hours = list(range(13))     # 0–12
+    days = list(range(6))  # 0–5 (Sunday–Friday)
+    hours = list(range(13))  # 0–12
 
     # Build lookup table: (day, hour) -> session
     schedule = {}
@@ -220,8 +239,8 @@ def my_sessions():
     manager = get_manager()
     sessions = manager.get_sessions_for_student(session["email"])
 
-    days = list(range(6))      # Sunday–Friday
-    hours = list(range(13))    # 0–12
+    days = list(range(6))  # Sunday–Friday
+    hours = list(range(13))  # 0–12
 
     schedule = {}
     for s in sessions:
@@ -267,8 +286,8 @@ def teacher_my_sessions():
     manager = get_manager()
     sessions = manager.get_sessions_for_teacher(session["email"])
 
-    days = list(range(6))      # Sunday–Friday
-    hours = list(range(13))    # 0–12
+    days = list(range(6))  # Sunday–Friday
+    hours = list(range(13))  # 0–12
 
     schedule = {}
     for s in sessions:
