@@ -37,6 +37,7 @@
                                 <form method="post"
                                       action="/teacher/delete_session/{{ s.id }}"
                                       onsubmit="return confirm('Delete this session?');">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="small-btn danger">Delete</button>
                                 </form>
                             </div>
